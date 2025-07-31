@@ -5,10 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Missão Bit</title>
   <style>
-    /* ... (todo o seu CSS permanece igual, exceto removi a parte do timer visual no HUD) ... */
-    #hud span {
-      display: inline-block;
-      min-width: 40px;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #000;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      border: 4px solid #fff;
+      background-color: #000;
+    }
+
+    #game-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border: 2px solid #fff;
+      font-size: 16px;
+      border-radius: 8px;
+      display: none;
+      font-family: 'Courier New', monospace;
+      z-index: 100;
+    }
+
+    .emoji-pixel {
+      font-size: 16px;
+      vertical-align: middle;
     }
 
     #menu {
@@ -25,13 +71,11 @@
       margin-bottom: 20px;
       text-shadow: 3px 3px 0 #fff;
       letter-spacing: 2px;
-      font-family: 'Courier New', monospace;
     }
 
     .description {
       margin-bottom: 30px;
       line-height: 1.5;
-      font-family: 'Courier New', monospace;
     }
 
     .menu-btn {
@@ -45,7 +89,6 @@
       display: block;
       width: 80%;
       transition: all 0.2s;
-      font-family: 'Courier New', monospace;
     }
 
     .menu-btn:hover {
@@ -67,7 +110,6 @@
       max-width: 300px;
       border-radius: 10px;
       z-index: 10;
-      font-family: 'Courier New', monospace;
     }
   </style>
 </head>
@@ -112,7 +154,19 @@
     let jogoPausado = false;
 
     const fases = [];
-    const conceitos = [];
+    const conceitos = [
+      "Bit é a menor unidade de informação.",
+      "Byte é um grupo de 8 bits.",
+      "Hardware é a parte física do computador.",
+      "Software é o que faz o hardware funcionar.",
+      "O processador executa instruções.",
+      "Memória RAM é onde os dados são armazenados temporariamente.",
+      "Sistema Operacional gerencia os recursos do computador.",
+      "Rede conecta computadores para compartilhar dados."
+    ];
+
+    let mapa = [];
+    let player = { x: 0, y: 0 };
 
     function mostrarCutscene(texto, callback) {
       cutsceneBox.innerText = texto;
@@ -137,8 +191,7 @@
       ctx.textAlign = "center";
 
       const palavras = conceito.split(" ");
-      let linha1 = "";
-      let linha2 = "";
+      let linha1 = "", linha2 = "";
 
       for (const palavra of palavras) {
         if (linha1.length + palavra.length < 30) {
@@ -149,9 +202,7 @@
       }
 
       ctx.fillText(linha1.trim(), canvas.width/2, canvas.height/2 - 5);
-      if (linha2) {
-        ctx.fillText(linha2.trim(), canvas.width/2, canvas.height/2 + 15);
-      }
+      if (linha2) ctx.fillText(linha2.trim(), canvas.width/2, canvas.height/2 + 15);
 
       setTimeout(() => {
         jogoPausado = false;
@@ -165,11 +216,7 @@
       for (let y = 1; y < 18; y++) {
         let l = "#";
         for (let x = 1; x < 22; x++) {
-          if ((x <= 3 && y <= 3)) {
-            l += " ";
-          } else {
-            l += Math.random() < 0.08 ? "#" : " ";
-          }
+          l += (x <= 3 && y <= 3) ? " " : (Math.random() < 0.08 ? "#" : " ");
         }
         l += "#";
         mapa.push(l);
@@ -194,17 +241,6 @@
       return mapArray.map(row => row.join(""));
     }
 
-    for (let i = 0; i < 50; i++) {
-      let faseValida = false;
-      while (!faseValida) {
-        const fase = gerarFaseAleatoria();
-        if (verificarCaminhoLivre(fase)) {
-          fases.push(fase);
-          faseValida = true;
-        }
-      }
-    }
-
     function verificarCaminhoLivre(fase) {
       const mapa = fase.map(linha => linha.split(""));
       const visitados = Array(mapa.length).fill().map(() => Array(mapa[0].length).fill(false));
@@ -218,18 +254,13 @@
         visitados[atual.y][atual.x] = true;
         if (mapa[atual.y][atual.x] === ".") pontosAcessiveis++;
 
-        const direcoes = [
-          {dx: 1, dy: 0}, {dx: -1, dy: 0},
-          {dx: 0, dy: 1}, {dx: 0, dy: -1}
-        ];
+        const direcoes = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
 
         for (const dir of direcoes) {
           const nx = atual.x + dir.dx;
           const ny = atual.y + dir.dy;
 
-          if (nx >= 0 && nx < mapa[0].length &&
-              ny >= 0 && ny < mapa.length &&
-              mapa[ny][nx] !== "#" && !visitados[ny][nx]) {
+          if (nx >= 0 && nx < mapa[0].length && ny >= 0 && ny < mapa.length && mapa[ny][nx] !== "#" && !visitados[ny][nx]) {
             fila.push({x: nx, y: ny});
           }
         }
@@ -239,20 +270,16 @@
       return pontosAcessiveis >= Math.ceil(totalPontos * 0.5);
     }
 
-    const conceitosBase = [
-      "Bit é a menor unidade de informação.",
-      "Byte é um grupo de 8 bits.",
-      "Hardware é a parte física do computador.",
-      "Software é o que faz o hardware funcionar.",
-      "O processador executa instruções.",
-      "Memória RAM é onde os dados são armazenados temporariamente.",
-      "Sistema Operacional gerencia os recursos do computador.",
-      "Rede conecta computadores para compartilhar dados."
-    ];
-    conceitos.push(...conceitosBase);
-
-    let mapa = [];
-    let player = { x: 0, y: 0 };
+    for (let i = 0; i < 50; i++) {
+      let faseValida = false;
+      while (!faseValida) {
+        const fase = gerarFaseAleatoria();
+        if (verificarCaminhoLivre(fase)) {
+          fases.push(fase);
+          faseValida = true;
+        }
+      }
+    }
 
     function carregarFase(n) {
       if (modoDesafio && n >= fases.length) {
@@ -298,75 +325,72 @@
 
       for (let y = 0; y < mapa.length; y++) {
         for (let x = 0; x < mapa[y].length; x++) {
-          if (mapa[y][x] === "#") {
+          let char = mapa[y][x];
+          if (char === "#") {
             ctx.fillStyle = "#fff";
             ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-          } else if (mapa[y][x] === ".") {
-            ctx.fillStyle = "#ffff00";
+          } else if (char === ".") {
+            ctx.fillStyle = "#ff0";
             ctx.beginPath();
-            ctx.arc(x * tileSize + tileSize/2, y * tileSize + tileSize/2, tileSize/3, 0, Math.PI * 2);
+            ctx.arc(x * tileSize + 8, y * tileSize + 8, 5, 0, Math.PI * 2);
             ctx.fill();
-          } else if (mapa[y][x] === "X") {
-            ctx.fillStyle = "#0f0";
-            ctx.beginPath();
-            ctx.arc(x * tileSize + tileSize/2, y * tileSize + tileSize/2, tileSize/2, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (mapa[y][x] === "V") {
+          } else if (char === "V") {
             ctx.fillStyle = "#f00";
             ctx.beginPath();
-            ctx.moveTo(x * tileSize + tileSize/2, y * tileSize);
-            ctx.lineTo(x * tileSize + tileSize, y * tileSize + tileSize);
-            ctx.lineTo(x * tileSize, y * tileSize + tileSize);
+            ctx.moveTo(x * tileSize + 8, y * tileSize);
+            ctx.lineTo(x * tileSize + 16, y * tileSize + 16);
+            ctx.lineTo(x * tileSize, y * tileSize + 16);
             ctx.closePath();
+            ctx.fill();
+          } else if (char === "X") {
+            ctx.fillStyle = "#0f0";
+            ctx.beginPath();
+            ctx.arc(x * tileSize + 8, y * tileSize + 8, 8, 0, Math.PI * 2);
             ctx.fill();
           }
         }
       }
 
       ctx.fillStyle = "#fff";
-      ctx.fillRect(player.x * tileSize + tileSize/4, player.y * tileSize + tileSize/4, tileSize/2, tileSize/2);
+      ctx.fillRect(player.x * tileSize + 4, player.y * tileSize + 4, 8, 8);
     }
 
     function mover(dx, dy) {
       if (jogoPausado) return;
-
       const nx = player.x + dx;
       const ny = player.y + dy;
-
-      if (nx < 0 || nx >= mapa[0].length || ny < 0 || ny >= mapa.length) return;
-
+      if (nx < 0 || ny < 0 || nx >= mapa[0].length || ny >= mapa.length) return;
       const destino = mapa[ny][nx];
+      if (destino === "#") return;
 
-      if (destino !== "#") {
-        for (const inimigo of inimigos) {
-          if (inimigo.x === nx && inimigo.y === ny) {
-            perderVida("☠️ Você foi atingido por um vírus!");
-            return;
-          }
+      for (const inimigo of inimigos) {
+        if (inimigo.x === nx && inimigo.y === ny) {
+          perderVida("☠️ Você foi atingido por um vírus!");
+          return;
         }
-
-        player.x = nx;
-        player.y = ny;
-
-        if (destino === ".") {
-          score++;
-          pontosRestantes--;
-          mapa[ny][nx] = " ";
-          scoreDisplay.textContent = score;
-          if (pontosRestantes === 0) {
-            mapa[mapa.length - 2][mapa[0].length - 2] = "X";
-          }
-        }
-
-        if (destino === "X") {
-          if ((faseAtual + 1) % 10 === 0) mostrarCutscene("✅ Checkpoint salvo!");
-          if ([10, 20, 30, 40, 50].includes(faseAtual + 1)) mostrarCutscene("🔄 Bit evoluiu para o próximo nível!");
-          faseAtual++;
-          carregarFase(faseAtual);
-        }
-
-        desenharMapa();
       }
+
+      player.x = nx;
+      player.y = ny;
+
+      if (destino === ".") {
+        score++;
+        pontosRestantes--;
+        mapa[ny][nx] = " ";
+        scoreDisplay.textContent = score;
+        if (pontosRestantes === 0) {
+          mapa[mapa.length - 2][mapa[0].length - 2] = "X";
+        }
+      }
+
+      if (destino === "X") {
+        if ((faseAtual + 1) % 10 === 0) mostrarCutscene("✅ Checkpoint salvo!");
+        if ([10, 20, 30, 40, 50].includes(faseAtual + 1)) mostrarCutscene("🔄 Bit evoluiu para o próximo nível!");
+        faseAtual++;
+        carregarFase(faseAtual);
+      }
+
+      desenharMapa();
     }
 
     function moverInimigos() {
@@ -404,6 +428,11 @@
       carregarFase(faseAtual);
     }
 
+    function gameLoop() {
+      moverInimigos();
+      requestAnimationFrame(gameLoop);
+    }
+
     window.addEventListener("keydown", (e) => {
       if (menu.style.display === "none" && !jogoPausado) {
         if (e.key === "ArrowUp") mover(0, -1);
@@ -428,6 +457,8 @@
       canvas.style.display = "block";
       carregarFase(0);
     });
+
+    requestAnimationFrame(gameLoop);
   </script>
 </body>
 </html>
