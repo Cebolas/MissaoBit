@@ -398,11 +398,12 @@
       for (let v of inimigos) {
         if (mapa[v.y][v.x] === "V") mapa[v.y][v.x] = " ";
         const novaX = v.x + v.dx;
-        if (novaX <= 0 || novaX >= mapa[0].length - 1 || mapa[v.y][novaX] === "#" || mapa[v.y][novaX] === ".") {
-          v.dx *= -1;
-        } else {
-          v.x = novaX;
-        }
+        if (novaX <= 0 || novaX >= mapa[0].length - 1 || 
+    mapa[v.y][novaX] === "#" || mapa[v.y][novaX] === "." || mapa[v.y][novaX] === "X") {
+  v.dx *= -1;
+} else {
+  v.x = novaX;
+}
         if (v.x === player.x && v.y === player.y) {
           perderVida("☠️ Você foi atingido por um vírus!");
           return;
