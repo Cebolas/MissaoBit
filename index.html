@@ -428,8 +428,8 @@
       carregarFase(faseAtual);
     }
 
-   let ultimaAtualizacaoInimigos = 0;
-const intervaloInimigos = 500; // em milissegundos (300 = mais lento)
+    let ultimaAtualizacaoInimigos = 0;
+const intervaloInimigos = 150; // em milissegundos (300 = mais lento)
 
 function gameLoop(timestamp) {
   if (!ultimaAtualizacaoInimigos) ultimaAtualizacaoInimigos = timestamp;
