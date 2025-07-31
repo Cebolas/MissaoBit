@@ -428,10 +428,20 @@
       carregarFase(faseAtual);
     }
 
-    function gameLoop() {
-      moverInimigos();
-      requestAnimationFrame(gameLoop);
-    }
+   let ultimaAtualizacaoInimigos = 0;
+const intervaloInimigos = 500; // em milissegundos (300 = mais lento)
+
+function gameLoop(timestamp) {
+  if (!ultimaAtualizacaoInimigos) ultimaAtualizacaoInimigos = timestamp;
+
+  if (timestamp - ultimaAtualizacaoInimigos > intervaloInimigos) {
+    moverInimigos();
+    ultimaAtualizacaoInimigos = timestamp;
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
 
     window.addEventListener("keydown", (e) => {
       if (menu.style.display === "none" && !jogoPausado) {
